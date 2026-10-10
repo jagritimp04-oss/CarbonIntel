@@ -4,10 +4,10 @@ class CarbonIntelligenceEngine:
     def __init__(self):
         # In production, load this from a managed CSV/Database
         self.factors = {
-            'electricity': {'factor': 0.818, 'scope': 2, 'unit': 'kWh', 'source': 'CEA / EPA eGRID'},
-            'diesel': {'factor': 2.68, 'scope': 1, 'unit': 'liters', 'source': 'DEFRA 2023'},
-            'petrol': {'factor': 2.31, 'scope': 1, 'unit': 'liters', 'source': 'DEFRA 2023'},
-            'waste': {'factor': 447.0, 'scope': 3, 'unit': 'tons', 'source': 'EPA WARM'}
+            'electricity': {'factor': 0.727, 'scope': 2, 'unit': 'kWh', 'source': 'CEA India'},
+            'diesel': {'factor': 2.64, 'scope': 1, 'unit': 'liters', 'source': 'India GHG Program/TERI'},
+            'petrol': {'factor': 2.31, 'scope': 1, 'unit': 'liters', 'source': 'India GHG '},
+            'waste': {'factor': 550, 'scope': 3, 'unit': 'tons', 'source': 'MoEFCC/GHG Platform India'}
         }
         
         # Reduction strategies matrix 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     # 3. Generate Reduction Plan
     reduction_plan = tool.generate_reduction_plan(sample_business_data, footprint)
     
-    # --- FIX: Print the stored variables to the terminal ---
+    # FIX: Print the stored variables to the terminal 
     print("\n=== CARBON FOOTPRINT REPORT ===")
     print(footprint.to_string(index=False))
     print(f"\nTotal Emissions: {total:,.2f} kg CO2e")
