@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarbonIntel - Enterprise Footprint Engine</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Config for Tailwind (Defined before script load to prevent ReferenceError) -->
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        eco: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        };
+
+        // Early theme initialization to prevent FOUC (Flash of Unstyled Content)
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            background-image: radial-gradient(at 0% 0%, hsla(147,50%,90%,1) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, hsla(210,40%,96%,1) 0px, transparent 50%);
+            background-attachment: fixed;
+            transition: background-color 0.3s ease, background-image 0.3s ease;
+        }
+
+        .dark body {
+            background-color: #0f172a;
+            background-image: radial-gradient(at 0% 0%, hsla(147,50%,15%,1) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, hsla(210,40%,10%,1) 0px, transparent 50%);
+        }
+        
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+
+        /* Custom Scrollbar for tables */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Number Input Reset */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="text-slate-800 dark:text-slate-200 antialiased min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- Header -->
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/80 sticky top-0 z-50 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-eco-500 to-eco-700 flex items-center justify-center text-white shadow-sm">
+                    <i class="fa-solid fa-leaf text-sm"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Carbon<span class="text-eco-600 dark:text-eco-500">Intel</span></h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-sm font-medium text-slate-500 dark:text-slate-400 hidden sm:block">
+                    Enterprise Footprint Engine
+                </div>
+                <!-- Theme Toggle Button -->
+                <button id="themeToggle" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-eco-500" aria-label="Toggle Dark Mode">
+                    <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Introduction -->
+        <div class="mb-8 text-center max-w-2xl mx-auto">
+            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white mb-3 transition-colors">Calculate Your Impact</h2>
+            <p class="text-slate-500 dark:text-slate-400 transition-colors">Enter your annual operational data below to generate a detailed carbon footprint report and an actionable, ROI-driven emission reduction plan.</p>
+        </div>
+
+        <!-- Input Form Section -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sm:p-8 mb-8 relative overflow-hidden transition-colors duration-300">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-eco-400 to-eco-600"></div>
+            
+            <form id="calculatorForm" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Electricity Input -->
+                    <div class="space-y-2">
+                        <label for="electricity" class="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <i class="fa-solid fa-bolt text-eco-500 mr-2"></i>Electricity
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="electricity" name="electricity" min="0" step="0.1" placeholder="e.g., 12000"
+                                class="block w-full rounded-xl border-slate-200 dark:border-slate-600 shadow-sm focus:border-eco-500 focus:ring-eco-500 sm:text-sm pl-4 pr-12 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border transition-colors outline-none focus:bg-white dark:focus:bg-slate-800" required>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 text-sm">
+                                kWh
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diesel Input -->
+                    <div class="space-y-2">
+                        <label for="diesel" class="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <i class="fa-solid fa-gas-pump text-eco-500 mr-2"></i>Diesel
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="diesel" name="diesel" min="0" step="0.1" placeholder="e.g., 500"
+                                class="block w-full rounded-xl border-slate-200 dark:border-slate-600 shadow-sm focus:border-eco-500 focus:ring-eco-500 sm:text-sm pl-4 pr-16 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border transition-colors outline-none focus:bg-white dark:focus:bg-slate-800">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 text-sm">
+                                Liters
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Petrol Input -->
+                    <div class="space-y-2">
+                        <label for="petrol" class="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <i class="fa-solid fa-car text-eco-500 mr-2"></i>Petrol
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="petrol" name="petrol" min="0" step="0.1" placeholder="e.g., 2500"
+                                class="block w-full rounded-xl border-slate-200 dark:border-slate-600 shadow-sm focus:border-eco-500 focus:ring-eco-500 sm:text-sm pl-4 pr-16 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border transition-colors outline-none focus:bg-white dark:focus:bg-slate-800">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 text-sm">
+                                Liters
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Waste Input -->
+                    <div class="space-y-2">
+                        <label for="waste" class="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <i class="fa-solid fa-trash-can text-eco-500 mr-2"></i>Waste
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="waste" name="waste" min="0" step="0.1" placeholder="e.g., 12"
+                                class="block w-full rounded-xl border-slate-200 dark:border-slate-600 shadow-sm focus:border-eco-500 focus:ring-eco-500 sm:text-sm pl-4 pr-12 py-3 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white border transition-colors outline-none focus:bg-white dark:focus:bg-slate-800">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 text-sm">
+                                Tons
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/50">
+                    <button type="button" onclick="loadSampleData()" class="text-sm text-eco-600 hover:text-eco-800 dark:text-eco-500 dark:hover:text-eco-400 font-medium transition-colors">
+                        Load Sample Data
+                    </button>
+                    <button type="submit" class="bg-slate-900 dark:bg-eco-600 text-white hover:bg-slate-800 dark:hover:bg-eco-500 focus:ring-4 focus:ring-slate-200 dark:focus:ring-eco-900 font-semibold rounded-xl text-sm px-6 py-3 text-center inline-flex items-center transition-all shadow-sm">
+                        Calculate Footprint
+                        <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Dashboard Output (Initially Hidden) -->
+        <div id="dashboardContainer" class="hidden opacity-0 transition-opacity duration-500 space-y-8">
+            
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
+                <h3 class="text-2xl font-bold text-slate-900 dark:text-white">Analysis Results</h3>
+                <span id="currentDate" class="text-sm text-slate-500 dark:text-slate-400 font-medium"></span>
+            </div>
+
+            <!-- Top Cards: Total & Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Total Emissions Card -->
+                <div class="lg:col-span-1 bg-gradient-to-br from-eco-600 to-eco-800 dark:from-eco-700 dark:to-eco-900 rounded-2xl shadow-lg p-6 sm:p-8 text-white flex flex-col justify-center relative overflow-hidden">
+                    <!-- Decor pattern -->
+                    <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-10 blur-2xl"></div>
+                    <div class="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-black opacity-10 blur-xl"></div>
+                    
+                    <div class="relative z-10">
+                        <p class="text-eco-100 font-medium text-sm sm:text-base mb-1 uppercase tracking-wider">Total Annual Emissions</p>
+                        <div class="flex items-baseline gap-2 mb-2">
+                            <span id="totalEmissions" class="text-4xl sm:text-5xl font-extrabold tabular-nums tracking-tight">0</span>
+                            <span class="text-eco-200 font-medium">kg CO₂e</span>
+                        </div>
+                        <p class="text-sm text-eco-100/80 mt-4 leading-relaxed">
+                            This represents the total estimated carbon equivalent emissions based on your provided consumption data across all scopes.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Chart Card -->
+                <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col transition-colors duration-300">
+                    <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4">Emissions Breakdown</h4>
+                    <div class="flex-grow flex items-center justify-center relative h-64 w-full">
+                        <canvas id="emissionsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footprint Report Table -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors duration-300">
+                <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                    <h4 class="text-base font-semibold text-slate-900 dark:text-white">Detailed Carbon Footprint Report</h4>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
+                                <th class="px-6 py-4 font-medium border-b border-slate-200 dark:border-slate-700">Category</th>
+                                <th class="px-6 py-4 font-medium border-b border-slate-200 dark:border-slate-700 text-right">Amount</th>
+                                <th class="px-6 py-4 font-medium border-b border-slate-200 dark:border-slate-700 text-center">Scope</th>
+                                <th class="px-6 py-4 font-medium border-b border-slate-200 dark:border-slate-700 text-right">Emissions <br><span class="text-[10px] text-slate-400 dark:text-slate-500 normal-case">(kg CO₂e)</span></th>
+                                <th class="px-6 py-4 font-medium border-b border-slate-200 dark:border-slate-700 hidden md:table-cell">Source / Factor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50 text-sm">
+                            <!-- Rows injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Reduction Plan Cards -->
+            <div class="pt-4">
+                <div class="mb-6">
+                    <h4 class="text-xl font-bold text-slate-900 dark:text-white">Emission Reduction Plan</h4>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">AI-prioritized strategies ranked by quickest payback and highest potential impact based on your emission hotspots.</p>
+                </div>
+                
+                <div id="planCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Cards injected via JS -->
+                </div>
+                
+                <!-- Empty State for Plan -->
+                <div id="emptyPlanState" class="hidden text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 transition-colors duration-300">
+                    <div class="mx-auto w-16 h-16 bg-slate-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-leaf text-slate-300 dark:text-slate-500 text-2xl"></i>
+                    </div>
+                    <p class="text-slate-500 dark:text-slate-400 font-medium">No significant reduction strategies found for the current data.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6 mt-auto transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 text-center text-sm text-slate-400 dark:text-slate-500">
+            &copy; 2026 CarbonIntel Engine. Generated for demonstration.
+        </div>
+    </footer>
+
+    <script>
+        // Set current date
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', dateOptions);
+
+        // --- Data Engine (Ported from Python) ---
+        class CarbonIntelligenceEngine {
+            constructor() {
+                // Factors Dictionary
+                this.factors = {
+                    'electricity': { factor: 0.727, scope: 2, unit: 'kWh', source: 'CEA India' },
+                    'diesel': { factor: 2.64, scope: 1, unit: 'liters', source: 'India GHG Program/TERI' },
+                    'petrol': { factor: 2.31, scope: 1, unit: 'liters', source: 'India GHG' },
+                    'waste': { factor: 550, scope: 3, unit: 'tons', source: 'MoEFCC/GHG Platform India' }
+                };
+
+                // Reduction strategies matrix
+                this.strategies = [
+                    { trigger_category: 'electricity', name: 'Install Rooftop Solar', cost: 'High', payback_years: 4.5, reduction_pct: 0.60 },
+                    { trigger_category: 'electricity', name: 'Switch to LED Lighting', cost: 'Low', payback_years: 0.8, reduction_pct: 0.15 },
+                    { trigger_category: 'petrol', name: 'Transition to EV Delivery Fleet', cost: 'High', payback_years: 3.0, reduction_pct: 1.00 },
+                    { trigger_category: 'diesel', name: 'Optimize Generator Usage / Hybrid', cost: 'Moderate', payback_years: 2.5, reduction_pct: 0.40 }, // Added missing diesel strategy for completeness
+                    { trigger_category: 'waste', name: 'Implement Source Segregation & Composting', cost: 'Low', payback_years: 0.5, reduction_pct: 0.80 }
+                ];
+            }
+
+            calculateFootprint(inputs) {
+                let results = [];
+                let totalEmissions = 0;
+
+                for (const [category, amount] of Object.entries(inputs)) {
+                    if (amount > 0 && this.factors[category]) {
+                        const meta = this.factors[category];
+                        const emissions = amount * meta.factor;
+                        totalEmissions += emissions;
+
+                        results.push({
+                            category: category.charAt(0).toUpperCase() + category.slice(1),
+                            rawCategory: category,
+                            amount: amount,
+                            unit: meta.unit,
+                            scope: `Scope ${meta.scope}`,
+                            emissions: parseFloat(emissions.toFixed(2)),
+                            source: `${meta.factor} kgCO₂e/${meta.unit} (${meta.source})`
+                        });
+                    }
+                }
+                
+                // Sort by emissions descending
+                results.sort((a, b) => b.emissions - a.emissions);
+                return { report: results, total: totalEmissions };
+            }
+
+            generateReductionPlan(report) {
+                // Hotspots are already sorted descending in the report
+                let plan = [];
+
+                for (const item of report) {
+                    const hotspotCategory = item.rawCategory;
+                    
+                    // Find matching strategies
+                    for (const strat of this.strategies) {
+                        if (strat.trigger_category === hotspotCategory) {
+                            const currentEmissions = item.emissions;
+                            const co2Saved = currentEmissions * strat.reduction_pct;
+
+                            plan.push({
+                                target: item.category,
+                                action: strat.name,
+                                cost: strat.cost,
+                                payback: strat.payback_years,
+                                co2Saved: parseFloat(co2Saved.toFixed(2))
+                            });
+                        }
+                    }
+                }
+
+                // Rank by quickest payback (asc) and highest impact (desc)
+                plan.sort((a, b) => {
+                    if (a.payback !== b.payback) {
+                        return a.payback - b.payback;
+                    }
+                    return b.co2Saved - a.co2Saved;
+                });
+
+                return plan;
+            }
+        }
+
+        // Globals
+        const engine = new CarbonIntelligenceEngine();
+        let emissionsChartInstance = null;
+
+        // Utilities
+        function formatNumber(num) {
+            return num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        // Demo Data Loader
+        function loadSampleData() {
+            document.getElementById('electricity').value = 12000;
+            document.getElementById('diesel').value = 500;
+            document.getElementById('petrol').value = 2500;
+            document.getElementById('waste').value = 12;
+        }
+
+        // Form Submission
+        document.getElementById('calculatorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            try {
+                // 1. Gather Inputs
+                const inputs = {
+                    'electricity': parseFloat(document.getElementById('electricity').value) || 0,
+                    'diesel': parseFloat(document.getElementById('diesel').value) || 0,
+                    'petrol': parseFloat(document.getElementById('petrol').value) || 0,
+                    'waste': parseFloat(document.getElementById('waste').value) || 0
+                };
+
+                // Validate if at least one input exists
+                if (Object.values(inputs).every(val => val === 0)) {
+                    showCustomAlert("Please enter at least one value to calculate.");
+                    return;
+                }
+
+                // 2. Calculate Footprint
+                const { report, total } = engine.calculateFootprint(inputs);
+
+                // 3. Generate Reduction Plan
+                const plan = engine.generateReductionPlan(report);
+
+                // 4. Update UI
+                renderDashboard(report, total, plan);
+
+            } catch (error) {
+                console.error("Calculation Error: ", error);
+                showCustomAlert("An error occurred during calculation. Please check your inputs.");
+            }
+        });
+
+        // Custom minimal alert replacement
+        function showCustomAlert(msg) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50 animate-fade-in-up shadow-md';
+            alertDiv.innerHTML = `
+                <span class="block sm:inline">${msg}</span>
+                <button class="absolute top-0 bottom-0 right-0 px-4 py-3" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-times text-red-500"></i>
+                </button>
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => {
+                if(alertDiv) alertDiv.remove();
+            }, 5000);
+        }
+
+        function renderDashboard(report, total, plan) {
+            const dashboard = document.getElementById('dashboardContainer');
+            
+            // Show dashboard with transition
+            dashboard.classList.remove('hidden');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                dashboard.classList.remove('opacity-0');
+            }, 50);
+
+            // Update Total
+            document.getElementById('totalEmissions').innerText = formatNumber(total);
+
+            // Update Chart
+            renderChart(report);
+
+            // Update Table
+            renderTable(report);
+
+            // Update Action Cards
+            renderPlan(plan);
+            
+            // Smooth scroll to dashboard
+            dashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderChart(report) {
+            const ctx = document.getElementById('emissionsChart').getContext('2d');
+            
+            const labels = report.map(r => r.category);
+            const data = report.map(r => r.emissions);
+            
+            // Modern Eco Palette
+            const colors = ['#10b981', '#0ea5e9', '#f59e0b', '#6366f1'];
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            const legendTextColor = isDark ? '#cbd5e1' : '#475569';
+            
+            if (emissionsChartInstance) {
+                emissionsChartInstance.destroy();
+            }
+
+            emissionsChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: legendTextColor,
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: "'Inter', sans-serif", size: 13 },
+                            bodyFont: { family: "'Inter', sans-serif", size: 13 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += formatNumber(context.parsed) + ' kg CO₂e';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTable(report) {
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = ''; // clear existing
+
+            report.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors group';
+                
+                // Icon mapping
+                let icon = 'fa-leaf';
+                if(item.category.toLowerCase() === 'electricity') icon = 'fa-bolt';
+                if(item.category.toLowerCase() === 'diesel') icon = 'fa-gas-pump';
+                if(item.category.toLowerCase() === 'petrol') icon = 'fa-car';
+                if(item.category.toLowerCase() === 'waste') icon = 'fa-trash-can';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-6 text-slate-400 dark:text-slate-500 group-hover:text-eco-500 dark:group-hover:text-eco-400 transition-colors"><i class="fa-solid ${icon}"></i></div>
+                            <span class="font-medium text-slate-900 dark:text-white">${item.category}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-slate-600 dark:text-slate-300">
+                        ${formatNumber(item.amount)} <span class="text-xs text-slate-400 dark:text-slate-500">${item.unit}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                            ${item.scope}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right font-semibold text-slate-900 dark:text-white">
+                        ${formatNumber(item.emissions)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 hidden md:table-cell truncate max-w-[200px]" title="${item.source}">
+                        ${item.source}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderPlan(plan) {
+            const container = document.getElementById('planCardsContainer');
+            const emptyState = document.getElementById('emptyPlanState');
+            
+            container.innerHTML = '';
+            
+            if (plan.length === 0) {
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            container.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            plan.forEach((item, index) => {
+                // Cost badge styling
+                let costBadge = '';
+                if (item.cost.toLowerCase() === 'high') {
+                    costBadge = '<span class="bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">High Cost</span>';
+                } else if (item.cost.toLowerCase() === 'moderate') {
+                    costBadge = '<span class="bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">Mod. Cost</span>';
+                } else {
+                    costBadge = '<span class="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">Low Cost</span>';
+                }
+
+                // Animation delay based on index
+                const delay = index * 100;
+
+                const card = document.createElement('div');
+                card.className = `bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg dark:hover:shadow-slate-900/50 transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden flex flex-col h-full animate-fade-in-up`;
+                card.style.animationDelay = `${delay}ms`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 px-2 py-1 rounded border border-slate-100 dark:border-slate-700">${item.target}</span>
+                        ${costBadge}
+                    </div>
+                    
+                    <h5 class="text-lg font-bold text-slate-900 dark:text-white mb-6 leading-snug flex-grow">${item.action}</h5>
+                    
+                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-700 mt-auto">
+                        <div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Payback Time</p>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white flex items-center">
+                                <i class="fa-regular fa-clock text-slate-400 dark:text-slate-500 mr-1.5"></i> ${item.payback} yrs
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Potential Savings</p>
+                            <p class="text-sm font-semibold text-eco-600 dark:text-eco-400 flex items-center">
+                                <i class="fa-solid fa-arrow-trend-down text-eco-400 dark:text-eco-500 mr-1.5"></i> ${formatNumber(item.co2Saved)} <span class="text-[10px] ml-1 text-eco-600/70 dark:text-eco-400/70">kg</span>
+                            </p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        // Setup Theme Toggle Listener
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            
+            // Update chart legend color dynamically if chart is currently visible
+            if (emissionsChartInstance) {
+                emissionsChartInstance.options.plugins.legend.labels.color = isDark ? '#cbd5e1' : '#475569';
+                emissionsChartInstance.update();
+            }
+        });
+    </script>
+</body>
+</html>
